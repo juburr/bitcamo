@@ -1,0 +1,116 @@
+version: 2.1
+
+parameters:
+  python_version:
+    type: string
+    default: "3.8"
+
+jobs:
+  unit_tests:
+    docker:
+      - image: cimg/python:<< pipeline.parameters.python_version >>
+    steps:
+      - checkout
+      - run:
+          name: Log Python Version
+          command: python3 --version
+      - restore_cache:
+          name: Restore Python Cache
+          key: bitcamo-<<pipeline.parameters.python_version >>-{{ checksum "requirements.txt" }}
+      - run:
+          name: Install Python Dependencies
+          command: |
+            if [ ! -d .venv ]; then
+              python3 -m venv .venv
+              source .venv/bin/activate
+              pip3 install --upgrade pip
+              pip3 install -r requirements.txt
+            fi
+            # All steps in this job should use the venv
+            echo "source .venv/bin/activate" >> $BASH_ENV
+      - save_cache:
+          name: Save Python Cache
+          key: bitcamo-<<pipeline.parameters.python_version >>-{{ checksum "requirements.txt" }}
+          paths:
+            - .venv
+      - run:
+         name: Run Unit Tests
+         command: |
+           python3 -m unittest utils.tests.test_embedding
+           python3 -m unittest utils.tests.test_os
+
+  docker_release:
+    docker:
+      - image: cimg/base:stable
+    steps:
+      - checkout
+      - run:
+          name: Set Docker Tag Name
+          command: |
+            # Drops leading 'v' from tag name.
+            # e.g., git tag v1.0.0 becomes docker tag 0.0.1.
+            export DOCKER_TAG=<< pipeline.git.tag >>
+            export DOCKER_TAG="${DOCKER_TAG//v}"
+            echo "Docker tag will be: ${DOCKER_TAG}"
+
+            # Persists environment variable to future steps
+            echo "export DOCKER_TAG=\"${DOCKER_TAG}\"" >> $BASH_ENV
+      - setup_remote_docker
+      - run:
+          name: Set Base Image Digest
+          command: |
+            # Get the final base image listed in the Dockerfile, in case of multi-stage builds
+            export BASE_IMAGE=$(grep 'FROM ' Dockerfile | tail -n 1 | cut -d ' ' -f 2)
+
+            # Pull the image and determine the SHA256 hash
+            docker pull $BASE_IMAGE
+            export BASE_DIGEST=$(docker inspect --format='{{index .RepoDigests 0}}' $BASE_IMAGE | cut -d '@' -f 2)
+
+            # Persists environment variable to future steps
+            echo "export BASE_DIGEST=\"${BASE_DIGEST}\"" >> $BASH_ENV
+      - run:
+          name: Build Docker Image
+          command: |
+            echo "Building docker image bitcamo:${DOCKER_TAG}..."
+
+            # Static OCI annotations are defined inside the Dockerfile
+            docker build \
+              --label "org.opencontainers.image.version=<< pipeline.git.tag >>" \
+              --label "org.opencontainers.image.revision=<< pipeline.git.revision >>" \
+              --label "org.opencontainers.image.created=$(date -u +'%Y-%m-%dT%H:%M:%SZ')" \
+              --label "org.opencontainers.image.base.digest=${BASE_DIGEST}" \
+              -t bitcamo:${DOCKER_TAG} .
+      - run:
+          name: Log Image Inspection
+          command: docker inspect bitcamo:${DOCKER_TAG}
+      - run:
+          name: Authenticate with Github
+          command: |
+            echo $GITHUB_TOKEN | docker login ghcr.io -u juburr --password-stdin
+      - run:
+          name: Tag and Push Docker Image
+          command: |
+            docker tag bitcamo:${DOCKER_TAG} ghcr.io/juburr/bitcamo:${DOCKER_TAG}
+            docker tag bitcamo:${DOCKER_TAG} ghcr.io/juburr/bitcamo:latest
+            docker push ghcr.io/juburr/bitcamo:${DOCKER_TAG}
+            docker push ghcr.io/juburr/bitcamo:latest
+
+workflows:
+  version: 2
+  newcommits:
+     jobs:
+       - unit_tests:
+           filters:
+             tags:
+               only: /.*/
+             branches:
+               only: /.*/
+       - docker_release:
+           context: github_auth_npm_rw
+           requires:
+             - unit_tests
+           filters:
+             tags:
+               only: /^v[0-9]+\.[0-9]+\.[0-9]+$/
+             branches:
+               ignore: /.*/

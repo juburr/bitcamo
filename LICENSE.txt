@@ -1,0 +1,12 @@
+All source code is released under the GNU Affero General Public
+License version 3 (AGPL-v3).
+
+The EMBER MalConv weights file was released under the MIT license.
+
+The BitCamo logo is derived from two images from www.flaticon.com.
+The conditions at the time of download (3-19-2022) allowed:
+ - For commercial and personal projects
+ - On digital or printed media
+ - For an unlimited number of times and perpetually
+ - Anywhere in the world
+ - To make modifications and derived works
