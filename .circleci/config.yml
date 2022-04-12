@@ -48,7 +48,7 @@ jobs:
           name: Set Docker Tag Name
           command: |
             # Drops leading 'v' from tag name.
-            # e.g., git tag v1.0.0 becomes docker tag 0.0.1.
+            # e.g., git tag v1.0.0 becomes docker tag 1.0.0.
             export DOCKER_TAG=<< pipeline.git.tag >>
             export DOCKER_TAG="${DOCKER_TAG//v}"
             echo "Docker tag will be: ${DOCKER_TAG}"

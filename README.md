@@ -1,6 +1,6 @@
 <div align="center">
   <h1>BitCamo</h1>
-  <img align="center" width="280" src="https://github.com/juburr/dissertation/raw/master/resources/bitcamo.png" alt="EXE File">
+  <img align="center" width="280" src="https://github.com/juburr/bitcamo/raw/master/resources/bitcamo.png" alt="EXE File">
   <br />
   <b><i>Hiding malware in plain sight.</i></b><br /><br />
   BitCamo is an adversarial machine learning (AML) tool for modifying executables with the goal of evading malware detection systems. The initial version of this tool alters Windows PE files with the goal of evading the EMBER-trained MalConv model. The tool is designed to assist security researchers, AI/ML red team operators, and AV vendors. New contributors are welcome.<br /><br />
@@ -12,23 +12,23 @@
 
 ## Attack Overview 
 
+BitCamo is a gradient-based attack tool intended for use in whitebox attack scenarios. The current version is an implementation of Kreuk's FGSM overlay attack with greatly increased evasion rates and attack speeds. Selecting malicious samples uniformly at random from the [SOREL-20M](https://github.com/sophos-ai/SOREL-20M) dataset results in a 99% evasion rate against the EMBER-trained MalConv model while using payload sizes of only 900 bytes. The attack completes in a mere one second on average, offering a vast improvement over existing tools. See the remarks on limitations below.
+
 ### PE File Modification
 Most bytes within a Windows PE file cannot be freely modified without breaking functionality. BitCamo will attempt to insert payloads at unused locations throughout the file. The current version of this tool will only target the file overlay. The ability to use other payload locations will be included in future releases.
 
 <div align="center">
-  <img align="center" width="65%" src="https://github.com/juburr/dissertation/raw/master/resources/bitcamo-attack-overview.png" alt="Attack Overview">
+  <img align="center" width="65%" src="https://github.com/juburr/bitcamo/raw/master/resources/bitcamo-attack-overview.png" alt="Attack Overview">
 </div>
 
 ### Adversarial Attack Explanation
 The payload contains a specially crafted set of bytes designed to fool MalConv. In our white-box attack scenario, these bytes are determined mathematically using the Fast Gradient Sign Method (FGSM). Before running the gradient attack, users have the ability to specify how the payload should be initialized. Previous attacks in the research literature use a randomized method, whereas this tool fills the payload with byte value `0xBF` by default, maximizing the likelihood of a succesful evasion. A primary obstacle that must be overcome is MalConv's non-differentiable embedding layer. Other tools use an L2 distance metric to map backwards across this layer, whereas this tool uses K-D trees to offer blazing fast lookup speeds.
 
 ### Limitations
-The EMBER-trained MalConv model uses 1 MB input sizes. Although malware samples tend to be fairly small, BitCamo will not yet work against executables with larger file sizes.  
+The EMBER-trained MalConv model uses 1 MB input sizes. Although malware samples tend to be fairly small, note that BitCamo will not yet work against executables with larger file sizes, as it currently targets the file overlay. Future releases of the tool will target other sections of the PE file. Additional detection models will also be supported in future releases.
 
 ## Acknowledgements
-This tool would not be possible without the amazing contributions to the research literature from the teams listed below.  
-
-BitCamo is largely a variation of Kreuk's FGSM overlay attack with several improvements to improve evasion rates and attack speeds.  
+This tool would not be possible without the amazing contributions to the research literature from the teams listed below.   
 
 Defensive:
 - MalConv ([Raff et al, 2017](https://arxiv.org/abs/1710.09435))
