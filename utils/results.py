@@ -138,10 +138,17 @@ class Results:
         self.rec_duration_max = timedelta(seconds=max(rec_durations))
 
         # MalConv scores (initial)
+        self.initial_scores_mal = 0
         malconv_scores_init = []
         for s in samples:
             if s.processable:
                 malconv_scores_init.append(s.x_embermalconv_score * 100)
+                if s.x_embermalconv_score >= 0.5:
+                    self.initial_scores_mal = self.initial_scores_mal + 1
+        self.initial_scores_tot = len(malconv_scores_init)
+        self.initial_scores_ben = self.initial_scores_tot - self.initial_scores_mal
+        self.initial_scores_ben_pct = (self.initial_scores_ben / self.initial_scores_tot) * 100
+        self.initial_scores_mal_pct = (self.initial_scores_mal / self.initial_scores_tot) * 100
         self.embermalconv_score_init_avg = mean(malconv_scores_init)
         self.embermalconv_score_init_med = median(malconv_scores_init)
         self.embermalconv_score_init_std = 0.0
@@ -186,6 +193,9 @@ class Results:
         print(colored('[Cumulative Results]', 'blue', 'on_yellow'))
         print(f'Total File Count: {self.num_samples}')
         print(f'   Unprocessable: {self.num_unprocessable} ({self.pct_unprocessable:.4f}%)')
+        print('Initial Classifications:')
+        print(f'   Malicious: {self.initial_scores_mal} ({self.initial_scores_mal_pct:.4f}%)')
+        print(f'   Benign: {self.initial_scores_ben} ({self.initial_scores_ben_pct:.4f}%)')
         print(f'Successful Evasions (MalConv): {self.num_evasions_embermalconv} ({self.pct_evasions_embermalconv:.4f}%)')
         if self.config.evade_predetection == True:
             print(f'Successful Evasions (Predetection): {self.num_evasions_predetection} ({self.pct_evasions_predetection:.4f}%)')
