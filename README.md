@@ -12,7 +12,7 @@
 
 ## Attack Overview 
 
-BitCamo is a gradient-based attack tool intended for use in whitebox attack scenarios. The current version is an implementation of Kreuk's FGSM overlay attack with greatly increased evasion rates and attack speeds. Selecting malicious samples uniformly at random from the [SOREL-20M](https://github.com/sophos-ai/SOREL-20M) dataset results in a 99% evasion rate against the EMBER-trained MalConv model while using payload sizes of only 900 bytes. The attack completes in a mere one second on average, offering a vast improvement over existing tools. See the remarks on limitations below.
+BitCamo is a gradient-based attack tool intended for use in whitebox attack scenarios. The current version is an implementation of Kreuk's FGSM overlay attack with greatly increased evasion rates and attack speeds. Selecting thousands of malicious samples (<1 MB) uniformly at random from the [SOREL-20M](https://github.com/sophos-ai/SOREL-20M) dataset results in a 100% evasion rate against the EMBER-trained MalConv model while using payload sizes of only 300 bytes on average. Attacks complete in a mere one second when using fixed size payloads, offering a massive performance improvement over existing tools. See the remarks on limitations below.
 
 ### PE File Modification
 Most bytes within a Windows PE file cannot be freely modified without breaking functionality. BitCamo will attempt to insert payloads at unused locations throughout the file. The current version of this tool will only target the file overlay. The ability to use other payload locations will be included in future releases.
@@ -43,7 +43,8 @@ Offensive:
 - K-D Tree reconstruction speedups ([Burr, 2022](https://scholar.dsu.edu/theses/))
 - 0xBF payload initialization method ([Burr, 2022](https://scholar.dsu.edu/theses/))
 - Evasion of the pre-detection mechanism ([Burr, 2022](https://scholar.dsu.edu/theses/))
-  
+- Iterative payload sizes ([Burr, 2022](https://scholar.dsu.edu/theses/))
+
 ## Instructions
 The provided Docker container is the quickest way for most users to get setup. Note that live malware samples are not included with the tool. You can download malware elsewhere at your own risk. Ten million malicious binaries are provided in the [SOREL-20M](https://github.com/sophos-ai/SOREL-20M) dataset by Sophos AI.
 
@@ -67,6 +68,29 @@ python3.8 -m pip install --upgrade pip setuptools wheel
 python3.8 -m pip install -r requirements.txt
 python3.8 bitcamo.py samples/malicious_program.exe
 ```
+
+### Tips and Helpful CLI Flags
+
+The usage instructions above show an attack against a single file. BitCamo can also process datasets by specifying an entire directory instead:  
+`./bitcamo.py samples/malicious/sorel-20m`  
+
+A payload size of 900 bytes is used by default. This can be changed with the `-p` flag, specifying that all samples should be attacked using a fixed-sized payload:  
+`./bitcamo.py -p 1500 samples/malicious/sorel-20m`  
+
+Iteratively increase the payload size in 50 bytes increments, to a maximum payload size of 2000 bytes. This is what allowed for a 100% evasion rate with only 300-byte payloads on average. Processing time will be increased from roughly 1 second to 5 seconds on average. Use the `-O` flag to optimize the payload size:  
+`./bitcamo.py -O -p 2000 samples/malicious/sorel-20m`  
+
+Try using a different payload initialization strategy by supplying the `-i` flag. By default BitCamo will initialize all bytes in the payload to 0xBF (191) before running FGSM. Other options include `random`, `psuedorandom`, and `weighted`. Previous research typically used the `random` technique. The `-i` flag will also work by supplying the integer representation of any byte value between 0-255.  For example, 0xAA (170) can be used by entering:  
+`./bitcamo.py -i 170 samles/malicious/sorel-20m`  
+
+The tool works in both directions. BitCamo can process a benign file and make it appear malicious without actually introducing malicious code. Use the `-b` flag to specify that inputs are benign:  
+`./bitcamo.py -b samples/benign/windows-executables`  
+
+Specify a different output directory using the `-o` flag:  
+`./bitcamo.py -o samples/output/sorel-20m samples/malicious/sorel-20m`  
+
+Other less important command line flags can be discovered in the help menu by supplying the `-h` or `--help` flags:  
+`./bitcamo.py --help`
 
 ## References
 
