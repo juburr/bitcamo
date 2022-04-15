@@ -1,38 +1,25 @@
 import os
+from datetime import timedelta
 from pathlib import Path
 from models.malconv import TARGET_BENIGN, TARGET_MALICIOUS
 from utils.os import code_section_hash, hash_bytes, is_pe_file, read_file_bytes, write_file_bytes
+from utils.results import FullAttackResults
 
 class Sample:
     def __init__(
         self,
         path,
-        output_dir='',
-        max_iterations=8,
-        payload_size=0,
-        initialization_method='weighted',
-        epsilon=1.00,
         benign=False,
-        force=False,
+        output_dir='',
+        overwrite_output=True,
+
     ):
         # Configuration
         self.filename = os.path.basename(path)
         self.input_path = path
         self.output_path = self._generate_output_path(output_dir)
-        self.input_benign = benign
-        self.allow_overwrite = force
-        self.payload_size = payload_size
-        self.max_iterations = max_iterations
-        self.initialization_method = initialization_method
-        self.epsilon = epsilon
-        self.y_target = TARGET_BENIGN
-        if self.input_benign:
-            self.y_target = TARGET_MALICIOUS
-
-        # Database
-        self.db_orig_file_id = None
-        self.db_adv_file_id = None
-        self.attack_config_id = None
+        self.benign = benign
+        self.overwrite_output = overwrite_output
 
         # Input File
         self.x = None
@@ -42,22 +29,8 @@ class Sample:
         self.x_code_section_name = None
         self.x_embermalconv_score = 0
 
-        # Output File
-        self.x_new = None
-        self.x_new_len = 0
-        self.x_new_hash = None
-        self.x_new_code_hash = None
-        self.x_new_embermalconv_score = 0
-
         # Results
-        self.z_new_embermalconv_score = 0
-        self.processable = True
-        self.success = False
-        self.evades_predetection = False
-        self.payload_byte_distribution = None
-        self.iterations = 0
-        self.duration = 0
-        self.reconstruction_duration = 0
+        self.results = FullAttackResults()
 
         # Validate File Paths
         self.valid = self.validate()
@@ -100,10 +73,11 @@ class Sample:
     def _validate_output_file(self):
         if os.path.exists(self.output_path):
             if os.path.isfile(self.output_path):
+                # TODO: Check if --preserve is set before checking this?
                 if os.access(self.output_path, os.W_OK) == False:
                     print(f'Insufficient permission to overwrite existing file: \'{self.output_path}\'.')
                     return False
-                elif self.allow_overwrite == False:
+                elif self.overwrite_output == False:
                     print(f'The output file already exists, and the --preserve flag was specified. Path: \'{self.output_path}\'.')
                     return False
                 else:
@@ -124,7 +98,11 @@ class Sample:
         self.x_code_hash, self.x_code_section_name = code_section_hash(self.x)
 
     def write(self):
-        write_file_bytes(self.output_path, self.x_new)
+        result = self.results.best_result
+        if result.x_new is not None:
+            write_file_bytes(self.output_path, result.x_new)
+        if result.evades_malconv and result.payload_size == 0:
+            write_file_bytes(self.output_path, self.x)
 
     def free(self):
         '''
@@ -132,4 +110,4 @@ class Sample:
         raw bytes to save memory before iterating to the next sample. Keep the results though.
         '''
         self.x = None
-        self.x_new = None
+        self.results.best_result.x_new = None

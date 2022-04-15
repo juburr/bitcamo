@@ -9,6 +9,7 @@ from tensorflow.keras.layers import Dense, Conv1D, GlobalMaxPooling1D, Input, Em
 from tensorflow.keras.models import load_model
 from tensorflow.keras.optimizers import SGD
 
+KERNEL_SIZE = 512
 TARGET_MALICIOUS = [[1.0]]
 TARGET_BENIGN = [[0.0]]
 
@@ -218,3 +219,25 @@ class MalConv:
             Model prediction between 0 (benign) and 1 (malicious).
         """
         return self.model.predict(self._pad(x).reshape(1, -1))[0][0]
+
+    def evasion_achieved(self, y_hat, y_target):
+        """
+        Determines if evasion of MalConv has been achieved
+
+        Parameters
+        ----------
+        y_hat : numpy.float32
+            MalConv prediction score
+        y_target : list
+            Target class of the adversarial attack (benign or malcious)
+
+        Returns
+        -------
+        bool
+            True if MalConv has been evaded.
+        """
+        if y_hat >= self.malicious_threshold and y_target == TARGET_MALICIOUS:
+            return True
+        if y_hat < self.malicious_threshold and y_target == TARGET_BENIGN:
+            return True
+        return False

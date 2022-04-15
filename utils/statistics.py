@@ -7,11 +7,11 @@ def byte_distribution(x):
 def combine_byte_distributions(samples, successful_only=True):
     combined = Counter()
     for s in samples:
-        if s.payload_byte_distribution is None:
+        if s.results.best_result.payload_byte_distribution is None:
             continue
-        if successful_only and s.success == False:
+        if successful_only and s.results.best_result.evades_malconv == False:
             continue
-        combined = combined + s.payload_byte_distribution
+        combined = combined + s.results.best_result.payload_byte_distribution
     return combined
 
 def print_distribution_tuples(ctr, prefix=''):
