@@ -82,6 +82,7 @@ class FinalResults:
         self.num_evasions_predetection = 0
         self.num_processable = 0
         self.num_unprocessable = 0
+        self.num_initially_correct = 0
         for s in samples:
             if s.results.best_result.processable:
                 self.num_processable = self.num_processable + 1
@@ -89,16 +90,25 @@ class FinalResults:
                 self.num_evasions_embermalconv = self.num_evasions_embermalconv + 1
             if s.results.best_result.evades_predetection:
                 self.num_evasions_predetection = self.num_evasions_predetection + 1
+            if s.benign == True and s.x_embermalconv_score < 0.5:
+                self.num_initially_correct += 1
+            if s.benign == False and s.x_embermalconv_score >= 0.5:
+                self.num_initially_correct += 1
+        self.num_initially_incorrect = len(samples) - self.num_initially_correct
+        self.num_flipped = self.num_evasions_embermalconv - self.num_initially_incorrect
         self.num_unprocessable = self.num_samples - self.num_processable
-        
+
         # Success totals (percentages)
         self.pct_evasions_embermalconv = 0.0
         self.pct_evasions_predetection = 0.0
         self.pct_processable = 0.0
         self.pct_unprocessable = 0.0
+        self.pct_flipped = 0.0
         if self.num_samples > 0:
             self.pct_processable = (self.num_processable / self.num_samples) * 100
             self.pct_unprocessable = (self.num_unprocessable / self.num_samples) * 100
+        if self.num_initially_correct > 0:
+            self.pct_flipped = (self.num_flipped / self.num_initially_correct) * 100
         if self.num_processable > 0:
             self.pct_evasions_embermalconv = (self.num_evasions_embermalconv / self.num_processable) * 100
             self.pct_evasions_predetection = (self.num_evasions_predetection / self.num_processable) * 100
@@ -314,9 +324,10 @@ class FinalResults:
         print('Final Classifications:')
         print(f'   Malicious: {self.final_scores_mal} ({self.final_scores_mal_pct:.4f}%)')
         print(f'   Benign: {self.final_scores_ben} ({self.final_scores_ben_pct:.4f}%)')
-        print(f'Successful MalConv Evasions: {self.num_evasions_embermalconv} ({self.pct_evasions_embermalconv:.4f}%)')
+        print(f'Successful MalConv Attacks: {self.num_flipped} / {self.num_initially_correct} ({self.pct_flipped:.4f}%)')
+        print(f'Total MalConv Evasions: {self.num_evasions_embermalconv} / {self.num_samples} ({self.pct_evasions_embermalconv:.4f}%)')
         if self.config.evade_predetection == True:
-            print(f'Successful Predetection Evasions: {self.num_evasions_predetection} ({self.pct_evasions_predetection:.4f}%)')
+            print(f'Total Predetection Evasions: {self.num_evasions_predetection} / {self.num_samples} ({self.pct_evasions_predetection:.4f}%)')
         print('Statistics:')
 
         if self.config.verbose:
