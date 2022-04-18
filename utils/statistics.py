@@ -23,7 +23,12 @@ def print_distribution_tuples(ctr, prefix=''):
     for i in ctr:
         print(f'{prefix}[byte {i[0]}]: {i[1]}')
 
-def print_duration_stats(durations):
+def print_duration_stats(durations, prefix='      '):
+    duration_cnt = len(durations)
+    print(f'{prefix}Cnt: {duration_cnt}')
+
+    if len(durations) == 0: return
+
     pd_durations = DataFrame(durations)
     duration_tot = pd_durations.sum().dt.to_pytimedelta().item()
     duration_avg = pd_durations.mean().dt.to_pytimedelta().item()
@@ -34,19 +39,23 @@ def print_duration_stats(durations):
     duration_1qt = pd_durations.quantile(0.25, numeric_only=False).dt.to_pytimedelta().item()
     duration_3qt = pd_durations.quantile(0.75, numeric_only=False).dt.to_pytimedelta().item()
 
-    print(f'      Tot: {format_timedelta(duration_tot)}')
-    print(f'      Avg: {format_timedelta(duration_avg)}')
-    print(f'      Std: {format_timedelta(duration_std)}')
-    print(f'      Min: {format_timedelta(duration_min)}')
-    print(f'      1Qt: {format_timedelta(duration_1qt)}')
-    print(f'      Med: {format_timedelta(duration_med)}')
-    print(f'      3Qt: {format_timedelta(duration_3qt)}')
-    print(f'      Max: {format_timedelta(duration_max)}')
+    print(f'{prefix}Tot: {format_timedelta(duration_tot)}')
+    print(f'{prefix}Avg: {format_timedelta(duration_avg)}')
+    print(f'{prefix}Std: {format_timedelta(duration_std)}')
+    print(f'{prefix}Min: {format_timedelta(duration_min)}')
+    print(f'{prefix}1Qt: {format_timedelta(duration_1qt)}')
+    print(f'{prefix}Med: {format_timedelta(duration_med)}')
+    print(f'{prefix}3Qt: {format_timedelta(duration_3qt)}')
+    print(f'{prefix}Max: {format_timedelta(duration_max)}')
 
 def print_stats_summary(numlist, prefix='      ', integers_only=False, include_sum=True):
+    numlist_cnt = len(numlist)
+    print(f'{prefix}Cnt: {numlist_cnt}')
+
+    if numlist_cnt == 0: return
+
     formatter = '' if integers_only else '.4f'
 
-    numlist_cnt = len(numlist)
     numlist_sum = sum(numlist)
     numlist_avg = mean(numlist)
     numlist_med = median(numlist)
@@ -56,7 +65,6 @@ def print_stats_summary(numlist, prefix='      ', integers_only=False, include_s
     numlist_1qt = percentile(numlist, 25)
     numlist_3qt = percentile(numlist, 75)
 
-    print(f'{prefix}Cnt: {numlist_cnt}')
     if include_sum:
         print(f'{prefix}Tot: {numlist_sum:{formatter}}')
     print(f'{prefix}Avg: {numlist_avg:.4f}')
