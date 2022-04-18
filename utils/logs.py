@@ -29,28 +29,28 @@ def print_score(y_hat, description, verbose=False, prefix=''):
     else:
         print(f'{prefix}MalConv Prediction ({description}):', color_prediction(f'{score_mal:.4f}% malicious', y_hat))
 
-# This function was taken directly from: https://stackoverflow.com/a/42320260
-# TODO: Millisecond-level precision would be nice to have
-def format_timedelta(tdelta, fmt='{D:02}d {H:02}h {M:02}m {S:02}s', inputtype='timedelta'):
+# This function was taken directly from: https://stackoverflow.com/questions/538666/format-timedelta-to-string/63198084#63198084
+def format_timedelta(tdelta, fmt='{D:02}d {H:02}h {M:02}m {S:07.4f}s', inputtype='timedelta'):
     if inputtype == 'timedelta':
-        remainder = int(tdelta.total_seconds())
+        remainder = tdelta.total_seconds()
     elif inputtype in ['s', 'seconds']:
-        remainder = int(tdelta)
+        remainder = float(tdelta)
     elif inputtype in ['m', 'minutes']:
-        remainder = int(tdelta)*60
+        remainder = float(tdelta)*60
     elif inputtype in ['h', 'hours']:
-        remainder = int(tdelta)*3600
+        remainder = float(tdelta)*3600
     elif inputtype in ['d', 'days']:
-        remainder = int(tdelta)*86400
+        remainder = float(tdelta)*86400
     elif inputtype in ['w', 'weeks']:
-        remainder = int(tdelta)*604800
+        remainder = float(tdelta)*604800
 
     f = Formatter()
     desired_fields = [field_tuple[1] for field_tuple in f.parse(fmt)]
-    possible_fields = ('W', 'D', 'H', 'M', 'S')
-    constants = {'W': 604800, 'D': 86400, 'H': 3600, 'M': 60, 'S': 1}
+    possible_fields = ('Y','m','W', 'D', 'H', 'M', 'S', 'mS', 'µS')
+    constants = {'Y':86400*365.24,'m': 86400*30.44 ,'W': 604800, 'D': 86400, 'H': 3600, 'M': 60, 'S': 1, 'mS': 1/pow(10,3) , 'µS':1/pow(10,6)}
     values = {}
     for field in possible_fields:
         if field in desired_fields and field in constants:
-            values[field], remainder = divmod(remainder, constants[field])
+            Quotient, remainder = divmod(remainder, constants[field])
+            values[field] = int(Quotient) if field != 'S' else Quotient + remainder
     return f.format(fmt, **values)
