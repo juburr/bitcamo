@@ -40,10 +40,10 @@ Offensive:
 - FGSM overlay attack ([Kreuk et al., 2019](https://arxiv.org/abs/1802.04528))
 - One-shot FGSM slack attack ([Suciu et al., 2019](https://arxiv.org/abs/1810.08280))
 - DOS header attacks ([Demetrio et al., 2021](https://arxiv.org/abs/2008.07125))
-- K-D Tree reconstruction speedups ([Burr, 2022](https://scholar.dsu.edu/theses/))
-- 0xBF payload initialization method ([Burr, 2022](https://scholar.dsu.edu/theses/))
-- Evasion of the pre-detection mechanism ([Burr, 2022](https://scholar.dsu.edu/theses/))
-- Iterative payload sizes ([Burr, 2022](https://scholar.dsu.edu/theses/))
+- K-D Tree reconstruction speedups ([Burr, 2022](https://scholar.dsu.edu/theses/378))
+- Payload initialization methods ([Burr, 2022](https://scholar.dsu.edu/theses/378))
+- Evasion of the pre-detection mechanism ([Burr, 2022](https://scholar.dsu.edu/theses/378))
+- Payload size minimization algorithm ([Burr, 2022](https://scholar.dsu.edu/theses/378))
 
 ## Instructions
 The provided Docker container is the quickest way for most users to get setup. Note that live malware samples are not included with the tool. You can download malware elsewhere at your own risk. Ten million malicious binaries are provided in the [SOREL-20M](https://github.com/sophos-ai/SOREL-20M) dataset by Sophos AI.
@@ -96,7 +96,7 @@ Other less important command line flags can be discovered in the help menu by su
 
 Anderson, H., & Roth, P. (2018). EMBER: An Open Dataset for Training Static PE Malware Machine Learning Models. doi:10.48550/arXiv.1804.04637
 
-Burr, J. (2022). Improving Adverarial Machine Learning Attacks Against MalConv (Doctoral dissertation). Retrieved from https://scholar.dsu.edu/theses/
+Burr, J. (2022). Improving Adverarial Machine Learning Attacks Against MalConv (Doctoral dissertation). Retrieved from https://scholar.dsu.edu/theses/378/
 
 Chen, B., Ren, Z., Yu, C., Hussain, I., & Liu, J. (2019). Adversarial Examples for CNN-Based Malware Detectors. *IEEE Access, 7*, 54360-54371. doi:10.1109/ACCESS.2019.2913439
 
