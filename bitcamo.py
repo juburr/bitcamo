@@ -59,7 +59,7 @@ def post_attack(sample, attack_config):
     return sample
 
 def attack(samples, attack_config):
-    malconv = MalConv(attack_mode=True)
+    malconv = MalConv(attack_mode=True, verbose=attack_config.verbose)
     count = 0
     for s in samples:
         count = count + 1

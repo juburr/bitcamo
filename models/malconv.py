@@ -35,7 +35,7 @@ class MalConv:
     URL: https://arxiv.org/pdf/1804.04637.pdf
     """
 
-    def __init__(self, attack_mode=False):
+    def __init__(self, attack_mode=False, verbose=False):
         self.attack_mode = attack_mode
         self.padding_char = 256
         self.dict_size = 257
@@ -46,6 +46,7 @@ class MalConv:
         self.model = self._load_full_model()
         self.embedder = None
         self.embedding_space_model = None
+        self.verbose = "auto" if verbose == True else 0
 
         # Conserve memory by only loading the additional models when in attack mode
         if attack_mode:
@@ -210,7 +211,7 @@ class MalConv:
         """
         if self.attack_mode == False:
             raise Exception('function predict_embedded() is only available in attack mode')
-        return self.embedding_space_model.predict(z)[0][0]
+        return self.embedding_space_model.predict(z, verbose=self.verbose)[0][0]
     
     def predict(self, x):
         """
@@ -226,7 +227,7 @@ class MalConv:
         y_hat : numpy.float32
             Model prediction between 0 (benign) and 1 (malicious).
         """
-        return self.model.predict(self._pad(x).reshape(1, -1))[0][0]
+        return self.model.predict(self._pad(x).reshape(1, -1), verbose=self.verbose)[0][0]
 
     def evasion_achieved(self, y_hat, y_target):
         """
