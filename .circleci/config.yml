@@ -1,6 +1,31 @@
 version: 2.1
 
+aliases:
+  - &run-always
+    branches:
+      only: /.*/
+    tags:
+      only: /.*/
+
+  - &run-never
+    branches:
+      ignore: /.*/
+    tags:
+      ignore: /.*/
+
+  - &run-on-release
+    branches:
+      ignore: /.*/
+    tags:
+      only: /^v[0-9]+\.[0-9]+\.[0-9]+$/
+
 parameters:
+  cimg_base_version:
+    type: string
+    default: "stable"
+  docker_version:
+    type: string
+    default: "docker24"
   python_version:
     type: string
     default: "3.8"
@@ -39,9 +64,9 @@ jobs:
            python3 -m unittest utils.tests.test_embedding
            python3 -m unittest utils.tests.test_os
 
-  docker_release:
+  container_build:
     docker:
-      - image: cimg/base:stable
+      - image: cimg/base:<< pipeline.parameters.cimg_base_version >>
     steps:
       - checkout
       - run:
@@ -53,9 +78,16 @@ jobs:
             export DOCKER_TAG="${DOCKER_TAG//v}"
             echo "Docker tag will be: ${DOCKER_TAG}"
 
+            if [[ "${DOCKER_TAG}" == "" ]]; then
+              export DOCKER_TAG="dev"
+            fi
+
             # Persists environment variable to future steps
             echo "export DOCKER_TAG=\"${DOCKER_TAG}\"" >> $BASH_ENV
-      - setup_remote_docker
+            echo "export DOCKER_TAG=\"${DOCKER_TAG}\"" > ~/tags.env
+      - setup_remote_docker:
+          version: << pipeline.parameters.docker_version >>
+          docker_layer_caching: true
       - run:
           name: Set Base Image Digest
           command: |
@@ -70,6 +102,9 @@ jobs:
             echo "export BASE_DIGEST=\"${BASE_DIGEST}\"" >> $BASH_ENV
       - run:
           name: Build Docker Image
+          environment:
+            BUILDKIT_PROGRESS: plain
+            DOCKER_BUILLDKIT: 1
           command: |
             echo "Building docker image bitcamo:${DOCKER_TAG}..."
 
@@ -84,12 +119,36 @@ jobs:
           name: Log Image Inspection
           command: docker inspect bitcamo:${DOCKER_TAG}
       - run:
+          name: Save Container Image
+          command: |
+            mkdir ~/images
+            docker save -o ~/images/bitcamo.tar bitcamo:${DOCKER_TAG}
+      - persist_to_workspace:
+          root: /home/circleci
+          paths:
+            - images
+            - tags.env
+
+  container_publish:
+    docker:
+      - image: cimg/base:<< pipeline.parameters.cimg_base_version >>
+    steps:
+      - attach_workspace:
+          at: ~/workspace
+      - setup_remote_docker:
+          version: << pipeline.parameters.docker_version >>
+          docker_layer_caching: true
+      - run:
+          name: Load saved image
+          command: docker load -i ~/workspace/images/bitcamo.tar
+      - run:
           name: Authenticate with Github
           command: |
-            echo $GITHUB_TOKEN | docker login ghcr.io -u juburr --password-stdin
+            echo $GITHUB_TOKEN | docker login ghcr.io -u $GITHUB_USER --password-stdin
       - run:
           name: Tag and Push Docker Image
           command: |
+            $(cat ~/workspace/tags.env | xargs)
             docker tag bitcamo:${DOCKER_TAG} ghcr.io/juburr/bitcamo:${DOCKER_TAG}
             docker tag bitcamo:${DOCKER_TAG} ghcr.io/juburr/bitcamo:latest
             docker push ghcr.io/juburr/bitcamo:${DOCKER_TAG}
@@ -105,12 +164,12 @@ workflows:
                only: /.*/
              branches:
                only: /.*/
-       - docker_release:
-           context: github_auth_npm_rw
+       - container_build:
            requires:
              - unit_tests
-           filters:
-             tags:
-               only: /^v[0-9]+\.[0-9]+\.[0-9]+$/
-             branches:
-               ignore: /.*/
+           filters: *run-always
+       - container_publish:
+           context: github_bitcamo_rw
+           requires:
+             - container_build
+           filters: *run-on-release

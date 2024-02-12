@@ -5,7 +5,7 @@ FROM ubuntu:20.04
 LABEL org.opencontainers.image.title="BitCamo"
 LABEL org.opencontainers.image.description="Creates adversarial Windows PE files for evading ML detection models"
 LABEL org.opencontainers.image.source="https://github.com/juburr/bitcamo"
-LABEL org.opencontainers.image.authors="Justin Burr <justin.burr@trojans.dsu.edu>"
+LABEL org.opencontainers.image.authors="Justin Burr"
 LABEL org.opencontainers.image.base.name="docker.io/library/ubuntu:20.04"
 
 RUN apt-get -y update && \
