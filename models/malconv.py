@@ -91,9 +91,13 @@ class MalConv:
             A pre-trained MalConv model
         """
         model = load_model(self.model_path, compile = False)
+        lr_schedule = tf.keras.optimizers.schedules.ExponentialDecay(
+            initial_learning_rate=0.01,
+            decay_steps=10000,
+            decay_rate=1e-3)
         model.compile(
             loss='binary_crossentropy',
-            optimizer=SGD(learning_rate=0.01, momentum=0.9, nesterov=True, decay=1e-3),
+            optimizer=SGD(momentum=0.9, nesterov=True, learning_rate=lr_schedule),
             metrics=[metrics.binary_accuracy]
         )
         return model
@@ -120,9 +124,13 @@ class MalConv:
         outp = Dense(1, activation='sigmoid')(dense)
 
         emb_model = Model( inp, outp )
+        lr_schedule = tf.keras.optimizers.schedules.ExponentialDecay(
+            initial_learning_rate=0.01,
+            decay_steps=10000,
+            decay_rate=1e-3)
         emb_model.compile(
             loss='binary_crossentropy',
-            optimizer=SGD(learning_rate=0.01, momentum=0.9, nesterov=True, decay=1e-3),
+            optimizer=SGD(momentum=0.9, nesterov=True, learning_rate=lr_schedule),
             metrics=[metrics.binary_accuracy]
         )
 
